@@ -10,6 +10,10 @@ import {
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://smartsharebypawan.onrender.com";
+
 function Profile() {
   const { username } = useParams();
 
@@ -18,7 +22,7 @@ function Profile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // LOAD PROFILE FROM BACKEND
+  // LOAD PROFILE
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -26,27 +30,35 @@ function Profile() {
         setError("");
 
         const response = await fetch(
-          `http://localhost:5000/api/profiles/${username}`
+          `${API_URL}/api/profiles/${username}`
         );
 
         const data = await response.json();
 
         if (!response.ok) {
-          setError(data.message || "Profile not found.");
+          setError(
+            data.message || "Profile not found."
+          );
           return;
         }
 
         setProfile(data);
 
-        // Keep local copy
         localStorage.setItem(
           "smartshareProfile",
           JSON.stringify(data)
         );
 
       } catch (error) {
-        console.error("Profile fetch error:", error);
-        setError("Unable to connect to SmartShare server.");
+        console.error(
+          "Profile fetch error:",
+          error
+        );
+
+        setError(
+          "Unable to connect to SmartShare server."
+        );
+
       } finally {
         setLoading(false);
       }
@@ -77,21 +89,31 @@ function Profile() {
       <main className="public-profile-page">
         <div className="public-profile-card">
           <div className="public-profile-content">
+
             <h2>Profile Not Found</h2>
 
             <p>
-              {error || "This SmartShare profile does not exist."}
+              {error ||
+                "This SmartShare profile does not exist."}
             </p>
+
           </div>
         </div>
       </main>
     );
   }
 
-  // PROFILE URL
+  // IMPORTANT:
+  // Automatically uses the current website URL.
+  //
+  // Local:
+  // http://localhost:5173/profile/pawangurjar
+  //
+  // Vercel:
+  // https://your-project.vercel.app/profile/pawangurjar
+
   const profileUrl =
-    "http://192.168.29.132:5173/profile/" +
-    profile.username;
+    `${window.location.origin}/profile/${profile.username}`;
 
   // GET INITIALS
   const getInitials = (name) => {
@@ -106,62 +128,98 @@ function Profile() {
   // COPY PROFILE LINK
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(profileUrl);
+      await navigator.clipboard.writeText(
+        profileUrl
+      );
 
       setCopied(true);
 
       setTimeout(() => {
         setCopied(false);
       }, 2000);
+
     } catch (error) {
-      console.error("Failed to copy link:", error);
+      console.error(
+        "Failed to copy link:",
+        error
+      );
     }
   };
 
   // SHARE PROFILE
   const handleShare = async () => {
     if (navigator.share) {
+
       try {
+
         await navigator.share({
           title: `${profile.name} | SmartShare`,
           text: `Check out ${profile.name}'s SmartShare profile.`,
           url: profileUrl,
         });
+
       } catch (error) {
         console.log("Share cancelled");
       }
+
     } else {
+
       handleCopy();
+
     }
   };
 
   // DOWNLOAD QR
   const handleDownloadQR = () => {
-    const svg = document.getElementById("smartshare-qr");
+
+    const svg =
+      document.getElementById("smartshare-qr");
 
     if (!svg) return;
 
-    const svgData = new XMLSerializer().serializeToString(svg);
+    const svgData =
+      new XMLSerializer()
+        .serializeToString(svg);
 
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
+    const canvas =
+      document.createElement("canvas");
 
-    const img = new Image();
+    const ctx =
+      canvas.getContext("2d");
+
+    const img =
+      new Image();
 
     img.onload = () => {
+
       canvas.width = 600;
       canvas.height = 600;
 
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.drawImage(img, 50, 50, 500, 500);
+      ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
 
-      const pngUrl = canvas.toDataURL("image/png");
+      ctx.drawImage(
+        img,
+        50,
+        50,
+        500,
+        500
+      );
 
-      const downloadLink = document.createElement("a");
+      const pngUrl =
+        canvas.toDataURL("image/png");
+
+      const downloadLink =
+        document.createElement("a");
 
       downloadLink.href = pngUrl;
+
       downloadLink.download =
         `${profile.username}-smartshare-qr.png`;
 
@@ -170,50 +228,80 @@ function Profile() {
 
     img.src =
       "data:image/svg+xml;base64," +
-      btoa(unescape(encodeURIComponent(svgData)));
+      btoa(
+        unescape(
+          encodeURIComponent(svgData)
+        )
+      );
   };
 
   // SHARE QR
   const handleShareQR = async () => {
-    const svg = document.getElementById("smartshare-qr");
+
+    const svg =
+      document.getElementById("smartshare-qr");
 
     if (!svg) return;
 
-    const svgData = new XMLSerializer().serializeToString(svg);
+    const svgData =
+      new XMLSerializer()
+        .serializeToString(svg);
 
-    const blob = new Blob([svgData], {
-      type: "image/svg+xml",
-    });
+    const blob =
+      new Blob(
+        [svgData],
+        {
+          type: "image/svg+xml",
+        }
+      );
 
-    const file = new File(
-      [blob],
-      `${profile.username}-smartshare-qr.svg`,
-      {
-        type: "image/svg+xml",
-      }
-    );
+    const file =
+      new File(
+        [blob],
+        `${profile.username}-smartshare-qr.svg`,
+        {
+          type: "image/svg+xml",
+        }
+      );
 
     if (
       navigator.share &&
       navigator.canShare &&
-      navigator.canShare({ files: [file] })
+      navigator.canShare({
+        files: [file],
+      })
     ) {
+
       try {
+
         await navigator.share({
-          title: `${profile.name} | SmartShare`,
-          text: "Scan my SmartShare profile QR",
+          title:
+            `${profile.name} | SmartShare`,
+
+          text:
+            "Scan my SmartShare profile QR",
+
           files: [file],
         });
+
       } catch (error) {
-        console.log("QR share cancelled");
+
+        console.log(
+          "QR share cancelled"
+        );
+
       }
+
     } else {
+
       handleDownloadQR();
+
     }
   };
 
   return (
     <main className="public-profile-page">
+
       <div className="public-profile-card">
 
         {/* COVER */}
@@ -256,7 +344,11 @@ function Profile() {
 
             {profile.website && (
               <a
-                href={profile.website}
+                href={
+                  profile.website.startsWith("http")
+                    ? profile.website
+                    : `https://${profile.website}`
+                }
                 target="_blank"
                 rel="noreferrer"
               >
@@ -267,7 +359,11 @@ function Profile() {
 
             {profile.github && (
               <a
-                href={profile.github}
+                href={
+                  profile.github.startsWith("http")
+                    ? profile.github
+                    : `https://${profile.github}`
+                }
                 target="_blank"
                 rel="noreferrer"
               >
@@ -278,7 +374,11 @@ function Profile() {
 
             {profile.linkedin && (
               <a
-                href={profile.linkedin}
+                href={
+                  profile.linkedin.startsWith("http")
+                    ? profile.linkedin
+                    : `https://${profile.linkedin}`
+                }
                 target="_blank"
                 rel="noreferrer"
               >
@@ -391,6 +491,7 @@ function Profile() {
 
         </div>
       </div>
+
     </main>
   );
 }

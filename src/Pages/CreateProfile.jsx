@@ -50,9 +50,9 @@ function CreateProfile() {
     };
 
     try {
-      // SAVE PROFILE TO BACKEND
+      // SAVE PROFILE TO LIVE BACKEND
       const response = await fetch(
-        "http://localhost:5000/api/profiles",
+        "https://smartsharebypawan.onrender.com/api/profiles",
         {
           method: "POST",
           headers: {
@@ -69,7 +69,7 @@ function CreateProfile() {
         return;
       }
 
-      // KEEP LOCAL COPY FOR NOW
+      // KEEP LOCAL COPY
       localStorage.setItem(
         "smartshareProfile",
         JSON.stringify(updatedProfile)
@@ -84,7 +84,7 @@ function CreateProfile() {
       console.error("Create profile error:", error);
 
       alert(
-        "Unable to connect to SmartShare server. Please make sure the backend is running."
+        "Unable to connect to SmartShare server. Please try again."
       );
     }
   };
@@ -134,7 +134,6 @@ function CreateProfile() {
 
           </div>
 
-
           {/* USERNAME */}
 
           <div className="form-group">
@@ -156,7 +155,6 @@ function CreateProfile() {
 
           </div>
 
-
           {/* PROFESSION */}
 
           <div className="form-group">
@@ -171,7 +169,6 @@ function CreateProfile() {
             />
 
           </div>
-
 
           {/* BIO */}
 
@@ -188,7 +185,6 @@ function CreateProfile() {
             />
 
           </div>
-
 
           {/* WEBSITE */}
 
@@ -211,7 +207,6 @@ function CreateProfile() {
 
           </div>
 
-
           {/* GITHUB */}
 
           <div className="form-group">
@@ -233,7 +228,6 @@ function CreateProfile() {
 
           </div>
 
-
           {/* LINKEDIN */}
 
           <div className="form-group">
@@ -249,13 +243,11 @@ function CreateProfile() {
                 value={profile.linkedin}
                 onChange={handleChange}
                 placeholder="LinkedIn profile URL"
-
               />
 
             </div>
 
           </div>
-
 
           {/* CREATE BUTTON */}
 
@@ -271,7 +263,6 @@ function CreateProfile() {
         </form>
 
       </section>
-
 
       {/* RIGHT SIDE */}
 
