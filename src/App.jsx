@@ -1,14 +1,13 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import Navbar from "./components/Navbar";
-
-import Home from "./pages/Home";
-import Features from "./pages/Features";
-import Templates from "./pages/Templates";
-import Pricing from "./pages/Pricing";
-import CreateProfile from "./pages/CreateProfile";
-import Login from "./pages/Login";
-import Profile from "./pages/Profile";
+import Navbar from "./Components/Navbar";
+import Home from "./Pages/Home";
+import Features from "./Pages/Features";
+import Templates from "./Pages/Templates";
+import Pricing from "./Pages/Pricing";
+import CreateProfile from "./Pages/CreateProfile";
+import Login from "./Pages/Login";
+import Profile from "./Pages/Profile";
 
 function App() {
   return (
