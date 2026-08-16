@@ -1985,3 +1985,128 @@ a {
     height: 190px;
   }
 }
+
+
+
+/* ===============================
+   PROFILE PHOTO UPLOAD
+================================ */
+
+.profile-photo-upload {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.photo-upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 11px 18px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+
+  background: #ffffff;
+  color: #111827;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.photo-upload-button:hover {
+  background: #f8fafc;
+  border-color: #9ca3af;
+  transform: translateY(-1px);
+}
+
+.selected-photo-name {
+  max-width: 220px;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* ===============================
+   PREVIEW AVATAR IMAGE
+================================ */
+
+.preview-avatar {
+  width: 76px;
+  height: 76px;
+
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+
+  background: #111827;
+  color: white;
+
+  font-size: 24px;
+  font-weight: 700;
+
+  border: 4px solid #ffffff;
+
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.preview-avatar img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  display: block;
+}
+
+
+@media (max-width: 600px) {
+  .profile-photo-upload {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .photo-upload-button {
+    width: 100%;
+  }
+
+  .selected-photo-name {
+    max-width: 100%;
+  }
+}
+
+
+.public-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.public-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}

@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Link2,
   Globe,
+  Upload,
 } from "lucide-react";
 
 function CreateProfile() {
@@ -17,7 +18,14 @@ function CreateProfile() {
     website: "",
     github: "",
     linkedin: "",
+    image: null,
   });
+
+  const [saving, setSaving] = useState(false);
+
+  // ===============================
+  // HANDLE TEXT INPUT
+  // ===============================
 
   const handleChange = (e) => {
     setProfile({
@@ -26,14 +34,41 @@ function CreateProfile() {
     });
   };
 
+  // ===============================
+  // HANDLE IMAGE
+  // ===============================
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image size should be less than 5MB.");
+      return;
+    }
+
+    setProfile({
+      ...profile,
+      image: file,
+    });
+  };
+
+  // ===============================
+  // CREATE PROFILE
+  // ===============================
+
   const handleCreateProfile = async () => {
-    // NAME VALIDATION
     if (!profile.name.trim()) {
       alert("Please enter your name.");
       return;
     }
 
-    // USERNAME VALIDATION
     if (!profile.username.trim()) {
       alert("Please enter a username.");
       return;
@@ -44,50 +79,95 @@ function CreateProfile() {
       .toLowerCase()
       .replace(/\s+/g, "-");
 
-    const updatedProfile = {
-      ...profile,
-      username: cleanUsername,
-    };
-
     try {
-      // SAVE PROFILE TO LIVE BACKEND
+      setSaving(true);
+
+      // ===============================
+      // CREATE FORMDATA
+      // ===============================
+
+      const formData = new FormData();
+
+      formData.append("name", profile.name.trim());
+      formData.append("username", cleanUsername);
+      formData.append("role", profile.role.trim());
+      formData.append("bio", profile.bio.trim());
+      formData.append("website", profile.website.trim());
+      formData.append("github", profile.github.trim());
+      formData.append("linkedin", profile.linkedin.trim());
+
+      if (profile.image) {
+        formData.append("image", profile.image);
+      }
+
+      // ===============================
+      // LOCAL BACKEND
+      // ===============================
+
       const response = await fetch(
-        "https://smartsharebypawan.onrender.com/api/profiles",
+        "http://localhost:5000/api/profiles",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedProfile),
+          body: formData,
         }
       );
 
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message || "Failed to create profile.");
+        console.error("Backend error:", data);
+
+        alert(
+          data.message ||
+            "Failed to save profile."
+        );
+
         return;
       }
 
-      // KEEP LOCAL COPY
+      console.log(
+        "Profile saved successfully:",
+        data.profile
+      );
+
+      // ===============================
+      // SAVE LOCAL COPY
+      // ===============================
+
       localStorage.setItem(
         "smartshareProfile",
-        JSON.stringify(updatedProfile)
+        JSON.stringify(data.profile)
       );
 
-      console.log("Profile saved successfully:", data.profile);
+      // ===============================
+      // OPEN PROFILE
+      // ===============================
 
-      // OPEN PROFILE PAGE
-      navigate(`/profile/${cleanUsername}`);
+      navigate(
+        `/profile/${cleanUsername}`
+      );
 
     } catch (error) {
-      console.error("Create profile error:", error);
+      console.error(
+        "Create profile error:",
+        error
+      );
 
       alert(
-        "Unable to connect to SmartShare server. Please try again."
+        "Unable to connect to SmartShare server. Make sure backend is running on port 5000."
       );
+    } finally {
+      setSaving(false);
     }
   };
+
+  // ===============================
+  // IMAGE PREVIEW
+  // ===============================
+
+  const imagePreview = profile.image
+    ? URL.createObjectURL(profile.image)
+    : null;
 
   return (
     <main className="create-profile-page">
@@ -118,6 +198,43 @@ function CreateProfile() {
           className="profile-form"
           onSubmit={(e) => e.preventDefault()}
         >
+
+          {/* PROFILE PHOTO */}
+
+          <div className="form-group">
+
+            <label>Profile Photo</label>
+
+            <div className="profile-photo-upload">
+
+              <label
+                htmlFor="profile-image"
+                className="photo-upload-button"
+              >
+                <Upload size={18} />
+
+                {profile.image
+                  ? "Change Photo"
+                  : "Upload Photo"}
+              </label>
+
+              <input
+                id="profile-image"
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                style={{ display: "none" }}
+              />
+
+              {profile.image && (
+                <span className="selected-photo-name">
+                  {profile.image.name}
+                </span>
+              )}
+
+            </div>
+
+          </div>
 
           {/* NAME */}
 
@@ -255,9 +372,15 @@ function CreateProfile() {
             type="button"
             className="create-profile-button"
             onClick={handleCreateProfile}
+            disabled={saving}
           >
-            Create SmartShare
-            <ArrowRight size={18} />
+            {saving
+              ? "Creating Profile..."
+              : "Create SmartShare"}
+
+            {!saving && (
+              <ArrowRight size={18} />
+            )}
           </button>
 
         </form>
@@ -278,19 +401,40 @@ function CreateProfile() {
 
           <div className="preview-content">
 
+            {/* AVATAR */}
+
             <div className="preview-avatar">
-              PG
+
+              {imagePreview ? (
+                <img
+                  src={imagePreview}
+                  alt="Profile preview"
+                />
+              ) : (
+                "PG"
+              )}
+
             </div>
 
-            <h2>{profile.name}</h2>
+            {/* NAME */}
+
+            <h2>
+              {profile.name}
+            </h2>
+
+            {/* ROLE */}
 
             <p className="preview-role">
               {profile.role}
             </p>
 
+            {/* BIO */}
+
             <p className="preview-bio">
               {profile.bio}
             </p>
+
+            {/* LINKS */}
 
             <div className="preview-links">
 
@@ -316,6 +460,8 @@ function CreateProfile() {
               )}
 
             </div>
+
+            {/* CONTACT */}
 
             <button
               type="button"
