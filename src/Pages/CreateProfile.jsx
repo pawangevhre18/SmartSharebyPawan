@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -6,6 +7,14 @@ import {
   Globe,
   Upload,
 } from "lucide-react";
+
+// ==========================================
+// SMARTSHARE BACKEND
+// ==========================================
+
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://smartsharebypawan.onrender.com";
 
 function CreateProfile() {
   const navigate = useNavigate();
@@ -23,23 +32,23 @@ function CreateProfile() {
 
   const [saving, setSaving] = useState(false);
 
-  // ===============================
+  // ==========================================
   // HANDLE TEXT INPUT
-  // ===============================
+  // ==========================================
 
   const handleChange = (e) => {
-    setProfile({
-      ...profile,
+    setProfile((prev) => ({
+      ...prev,
       [e.target.name]: e.target.value,
-    });
+    }));
   };
 
-  // ===============================
+  // ==========================================
   // HANDLE IMAGE
-  // ===============================
+  // ==========================================
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
 
     if (!file) return;
 
@@ -53,15 +62,15 @@ function CreateProfile() {
       return;
     }
 
-    setProfile({
-      ...profile,
+    setProfile((prev) => ({
+      ...prev,
       image: file,
-    });
+    }));
   };
 
-  // ===============================
+  // ==========================================
   // CREATE PROFILE
-  // ===============================
+  // ==========================================
 
   const handleCreateProfile = async () => {
     if (!profile.name.trim()) {
@@ -77,14 +86,20 @@ function CreateProfile() {
     const cleanUsername = profile.username
       .trim()
       .toLowerCase()
-      .replace(/\s+/g, "-");
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-_]/g, "");
+
+    if (!cleanUsername) {
+      alert("Please enter a valid username.");
+      return;
+    }
 
     try {
       setSaving(true);
 
-      // ===============================
+      // ==========================================
       // CREATE FORMDATA
-      // ===============================
+      // ==========================================
 
       const formData = new FormData();
 
@@ -100,26 +115,35 @@ function CreateProfile() {
         formData.append("image", profile.image);
       }
 
-      // ===============================
-      // LOCAL BACKEND
-      // ===============================
+      // ==========================================
+      // SEND TO RENDER BACKEND
+      // ==========================================
 
-      const response = await fetch(
-        "http://localhost:5000/api/profiles",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const response = await fetch(API_URL + "/api/profiles", {
+        method: "POST",
+        body: formData,
+      });
 
-      const data = await response.json();
+      // Try to read JSON safely
+      let data = {};
+
+      try {
+        data = await response.json();
+      } catch (error) {
+        console.warn("Unable to parse JSON response:", error);
+        data = {};
+      }
+
+      // ==========================================
+      // BACKEND ERROR
+      // ==========================================
 
       if (!response.ok) {
         console.error("Backend error:", data);
 
         alert(
           data.message ||
-            "Failed to save profile."
+            "Failed to save profile. Server returned " + response.status + "."
         );
 
         return;
@@ -130,23 +154,24 @@ function CreateProfile() {
         data.profile
       );
 
-      // ===============================
-      // SAVE LOCAL COPY
-      // ===============================
+      // ==========================================
+      // SAVE PROFILE LOCALLY
+      // ==========================================
 
-      localStorage.setItem(
-        "smartshareProfile",
-        JSON.stringify(data.profile)
-      );
+      if (data.profile) {
+        localStorage.setItem(
+          "smartshareProfile",
+          JSON.stringify(data.profile)
+        );
+      }
 
-      // ===============================
-      // OPEN PROFILE
-      // ===============================
+      // ==========================================
+      // OPEN PUBLIC PROFILE
+      // ==========================================
 
-      navigate(
-        `/profile/${cleanUsername}`
-      );
-
+      const profilePath = "/profile/" + cleanUsername;
+      navigate(profilePath);
+      return;
     } catch (error) {
       console.error(
         "Create profile error:",
@@ -154,16 +179,16 @@ function CreateProfile() {
       );
 
       alert(
-        "Unable to connect to SmartShare server. Make sure backend is running on port 5000."
+        "Unable to connect to SmartShare server. Please try again."
       );
     } finally {
       setSaving(false);
     }
   };
 
-  // ===============================
+  // ==========================================
   // IMAGE PREVIEW
-  // ===============================
+  // ==========================================
 
   const imagePreview = profile.image
     ? URL.createObjectURL(profile.image)
@@ -196,7 +221,10 @@ function CreateProfile() {
 
         <form
           className="profile-form"
-          onSubmit={(e) => e.preventDefault()}
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleCreateProfile();
+          }}
         >
 
           {/* PROFILE PHOTO */}
@@ -369,9 +397,8 @@ function CreateProfile() {
           {/* CREATE BUTTON */}
 
           <button
-            type="button"
+            type="submit"
             className="create-profile-button"
-            onClick={handleCreateProfile}
             disabled={saving}
           >
             {saving
@@ -381,6 +408,7 @@ function CreateProfile() {
             {!saving && (
               <ArrowRight size={18} />
             )}
+
           </button>
 
         </form>
@@ -481,3 +509,4 @@ function CreateProfile() {
 }
 
 export default CreateProfile;
+
