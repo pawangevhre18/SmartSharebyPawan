@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -14,7 +13,7 @@ import {
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
-  "https://smartsharebypawan.onrender.com";
+  "http://localhost:5000";
 
 function CreateProfile() {
   const navigate = useNavigate();
@@ -103,34 +102,70 @@ function CreateProfile() {
 
       const formData = new FormData();
 
-      formData.append("name", profile.name.trim());
-      formData.append("username", cleanUsername);
-      formData.append("role", profile.role.trim());
-      formData.append("bio", profile.bio.trim());
-      formData.append("website", profile.website.trim());
-      formData.append("github", profile.github.trim());
-      formData.append("linkedin", profile.linkedin.trim());
+      formData.append(
+        "name",
+        profile.name.trim()
+      );
+
+      formData.append(
+        "username",
+        cleanUsername
+      );
+
+      formData.append(
+        "role",
+        profile.role.trim()
+      );
+
+      formData.append(
+        "bio",
+        profile.bio.trim()
+      );
+
+      formData.append(
+        "website",
+        profile.website.trim()
+      );
+
+      formData.append(
+        "github",
+        profile.github.trim()
+      );
+
+      formData.append(
+        "linkedin",
+        profile.linkedin.trim()
+      );
 
       if (profile.image) {
-        formData.append("image", profile.image);
+        formData.append(
+          "image",
+          profile.image
+        );
       }
 
       // ==========================================
-      // SEND TO RENDER BACKEND
+      // SEND TO BACKEND
       // ==========================================
 
-      const response = await fetch(API_URL + "/api/profiles", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        `${API_URL}/api/profiles`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
-      // Try to read JSON safely
       let data = {};
 
       try {
         data = await response.json();
       } catch (error) {
-        console.warn("Unable to parse JSON response:", error);
+        console.warn(
+          "Unable to parse JSON response:",
+          error
+        );
+
         data = {};
       }
 
@@ -139,24 +174,27 @@ function CreateProfile() {
       // ==========================================
 
       if (!response.ok) {
-        console.error("Backend error:", data);
+        console.error(
+          "Backend error:",
+          data
+        );
 
         alert(
           data.message ||
-            "Failed to save profile. Server returned " + response.status + "."
+            `Failed to save profile. Server returned ${response.status}.`
         );
 
         return;
       }
 
+      // ==========================================
+      // SUCCESS
+      // ==========================================
+
       console.log(
         "Profile saved successfully:",
         data.profile
       );
-
-      // ==========================================
-      // SAVE PROFILE LOCALLY
-      // ==========================================
 
       if (data.profile) {
         localStorage.setItem(
@@ -169,9 +207,10 @@ function CreateProfile() {
       // OPEN PUBLIC PROFILE
       // ==========================================
 
-      const profilePath = "/profile/" + cleanUsername;
-      navigate(profilePath);
-      return;
+      navigate(
+        `/profile/${cleanUsername}`
+      );
+
     } catch (error) {
       console.error(
         "Create profile error:",
@@ -181,6 +220,7 @@ function CreateProfile() {
       alert(
         "Unable to connect to SmartShare server. Please try again."
       );
+
     } finally {
       setSaving(false);
     }
@@ -194,10 +234,16 @@ function CreateProfile() {
     ? URL.createObjectURL(profile.image)
     : null;
 
+  // ==========================================
+  // UI
+  // ==========================================
+
   return (
     <main className="create-profile-page">
 
-      {/* LEFT SIDE */}
+      {/* ======================================
+          LEFT SIDE
+      ====================================== */}
 
       <section className="profile-form-section">
 
@@ -219,6 +265,10 @@ function CreateProfile() {
 
         </div>
 
+        {/* ====================================
+            PROFILE FORM
+        ==================================== */}
+
         <form
           className="profile-form"
           onSubmit={(e) => {
@@ -231,7 +281,9 @@ function CreateProfile() {
 
           <div className="form-group">
 
-            <label>Profile Photo</label>
+            <label>
+              Profile Photo
+            </label>
 
             <div className="profile-photo-upload">
 
@@ -251,7 +303,9 @@ function CreateProfile() {
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
-                style={{ display: "none" }}
+                style={{
+                  display: "none",
+                }}
               />
 
               {profile.image && (
@@ -268,7 +322,9 @@ function CreateProfile() {
 
           <div className="form-group">
 
-            <label>Full Name</label>
+            <label>
+              Full Name
+            </label>
 
             <input
               name="name"
@@ -283,11 +339,15 @@ function CreateProfile() {
 
           <div className="form-group">
 
-            <label>Username</label>
+            <label>
+              Username
+            </label>
 
             <div className="username-input">
 
-              <span>smartshare/</span>
+              <span>
+                smartshare/
+              </span>
 
               <input
                 name="username"
@@ -304,7 +364,9 @@ function CreateProfile() {
 
           <div className="form-group">
 
-            <label>Profession</label>
+            <label>
+              Profession
+            </label>
 
             <input
               name="role"
@@ -319,7 +381,9 @@ function CreateProfile() {
 
           <div className="form-group">
 
-            <label>Bio</label>
+            <label>
+              Bio
+            </label>
 
             <textarea
               name="bio"
@@ -335,7 +399,9 @@ function CreateProfile() {
 
           <div className="form-group">
 
-            <label>Website</label>
+            <label>
+              Website
+            </label>
 
             <div className="input-with-icon">
 
@@ -356,7 +422,9 @@ function CreateProfile() {
 
           <div className="form-group">
 
-            <label>GitHub</label>
+            <label>
+              GitHub
+            </label>
 
             <div className="input-with-icon">
 
@@ -377,7 +445,9 @@ function CreateProfile() {
 
           <div className="form-group">
 
-            <label>LinkedIn</label>
+            <label>
+              LinkedIn
+            </label>
 
             <div className="input-with-icon">
 
@@ -401,6 +471,7 @@ function CreateProfile() {
             className="create-profile-button"
             disabled={saving}
           >
+
             {saving
               ? "Creating Profile..."
               : "Create SmartShare"}
@@ -415,7 +486,9 @@ function CreateProfile() {
 
       </section>
 
-      {/* RIGHT SIDE */}
+      {/* ======================================
+          RIGHT SIDE
+      ====================================== */}
 
       <section className="profile-preview-section">
 
@@ -509,4 +582,3 @@ function CreateProfile() {
 }
 
 export default CreateProfile;
-

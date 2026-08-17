@@ -176,7 +176,8 @@ app.post("/api/auth/signup", async (req, res) => {
     // Validation
     if (!name || !email || !password) {
       return res.status(400).json({
-        message: "Name, email and password are required.",
+        message:
+          "Name, email and password are required.",
       });
     }
 
@@ -357,7 +358,10 @@ app.post(
 
       let imageUrl = "";
 
-      // Upload image
+      // ========================================
+      // UPLOAD IMAGE TO CLOUDINARY
+      // ========================================
+
       if (req.file) {
         const uploadResult =
           await new Promise(
@@ -391,31 +395,55 @@ app.post(
         );
       }
 
+      // ========================================
+      // PROFILE DATA
+      // ========================================
+
       const profileData = {
         name: profile.name.trim(),
+
         username:
-          profile.username.trim().toLowerCase(),
+          profile.username
+            .trim()
+            .toLowerCase(),
+
         role: profile.role || "",
+
         bio: profile.bio || "",
-        website: profile.website || "",
-        github: profile.github || "",
-        linkedin: profile.linkedin || "",
+
+        website:
+          profile.website || "",
+
+        github:
+          profile.github || "",
+
+        linkedin:
+          profile.linkedin || "",
       };
 
-      // Only replace image when new image exists
+      // Only replace image when
+      // new image exists
       if (imageUrl) {
         profileData.image = imageUrl;
       }
 
+      // ========================================
+      // SAVE / UPDATE PROFILE
+      // ========================================
+
       const savedProfile =
         await Profile.findOneAndUpdate(
           {
-            username: profileData.username,
+            username:
+              profileData.username,
           },
           profileData,
           {
-            new: true,
+            // FIXED MONGOOSE WARNING
+            returnDocument: "after",
+
             upsert: true,
+
             runValidators: true,
           }
         );
@@ -425,9 +453,14 @@ app.post(
         savedProfile.username
       );
 
+      // ========================================
+      // RESPONSE
+      // ========================================
+
       res.status(200).json({
         message:
           "Profile saved successfully.",
+
         profile: savedProfile,
       });
     } catch (error) {
@@ -437,8 +470,11 @@ app.post(
       );
 
       res.status(500).json({
-        message: "Failed to save profile.",
-        error: error.message,
+        message:
+          "Failed to save profile.",
+
+        error:
+          error.message,
       });
     }
   }
@@ -479,7 +515,9 @@ app.get(
       res.status(500).json({
         message:
           "Failed to get profile.",
-        error: error.message,
+
+        error:
+          error.message,
       });
     }
   }

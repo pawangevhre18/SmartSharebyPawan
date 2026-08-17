@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Link2,
   Globe,
@@ -8,6 +7,10 @@ import {
   Copy,
   Check,
   Download,
+  Edit3,
+  X,
+  Save,
+  Upload,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -17,10 +20,10 @@ import { QRCodeSVG } from "qrcode.react";
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
-  "https://smartsharebypawan.onrender.com";
+  "http://localhost:5000";
 
 // ==========================================
-// SMARTSHARE PRODUCTION URL
+// SMARTSHARE FRONTEND
 // ==========================================
 
 const FRONTEND_URL =
@@ -28,11 +31,31 @@ const FRONTEND_URL =
 
 function Profile() {
   const { username } = useParams();
+  const navigate = useNavigate();
 
   const [profile, setProfile] = useState(null);
+
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // ==========================================
+  // EDIT STATES
+  // ==========================================
+
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const [editForm, setEditForm] = useState({
+    name: "",
+    username: "",
+    role: "",
+    bio: "",
+    website: "",
+    github: "",
+    linkedin: "",
+    image: null,
+  });
 
   // ==========================================
   // LOAD PROFILE
@@ -57,23 +80,27 @@ function Profile() {
           return;
         }
 
-        console.log(
-          "PROFILE DATA:",
-          data
-        );
-
-        console.log(
-          "IMAGE URL:",
-          data.imageUrl
-        );
+        console.log("PROFILE DATA:", data);
 
         setProfile(data);
 
+        // Save latest profile locally
         localStorage.setItem(
           "smartshareProfile",
           JSON.stringify(data)
         );
 
+        // Set edit form
+        setEditForm({
+          name: data.name || "",
+          username: data.username || "",
+          role: data.role || "",
+          bio: data.bio || "",
+          website: data.website || "",
+          github: data.github || "",
+          linkedin: data.linkedin || "",
+          image: null,
+        });
       } catch (error) {
         console.error(
           "Profile fetch error:",
@@ -83,7 +110,6 @@ function Profile() {
         setError(
           "Unable to connect to SmartShare server."
         );
-
       } finally {
         setLoading(false);
       }
@@ -92,8 +118,226 @@ function Profile() {
     if (username) {
       fetchProfile();
     }
-
   }, [username]);
+
+  // ==========================================
+  // HANDLE EDIT INPUT
+  // ==========================================
+
+  const handleEditChange = (e) => {
+    setEditForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  // ==========================================
+  // HANDLE EDIT IMAGE
+  // ==========================================
+
+  const handleEditImage = (e) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image size should be less than 5MB.");
+      return;
+    }
+
+    setEditForm((prev) => ({
+      ...prev,
+      image: file,
+    }));
+  };
+
+  // ==========================================
+  // START EDIT
+  // ==========================================
+
+  const handleStartEdit = () => {
+    setEditForm({
+      name: profile.name || "",
+      username: profile.username || "",
+      role: profile.role || "",
+      bio: profile.bio || "",
+      website: profile.website || "",
+      github: profile.github || "",
+      linkedin: profile.linkedin || "",
+      image: null,
+    });
+
+    setEditing(true);
+  };
+
+  // ==========================================
+  // CANCEL EDIT
+  // ==========================================
+
+  const handleCancelEdit = () => {
+    setEditing(false);
+
+    setEditForm({
+      name: profile.name || "",
+      username: profile.username || "",
+      role: profile.role || "",
+      bio: profile.bio || "",
+      website: profile.website || "",
+      github: profile.github || "",
+      linkedin: profile.linkedin || "",
+      image: null,
+    });
+  };
+
+  // ==========================================
+  // SAVE PROFILE
+  // ==========================================
+
+  const handleSaveProfile = async () => {
+    if (!editForm.name.trim()) {
+      alert("Please enter your name.");
+      return;
+    }
+
+    if (!editForm.username.trim()) {
+      alert("Please enter a username.");
+      return;
+    }
+
+    const cleanUsername = editForm.username
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-_]/g, "");
+
+    if (!cleanUsername) {
+      alert("Please enter a valid username.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const formData = new FormData();
+
+      formData.append(
+        "name",
+        editForm.name.trim()
+      );
+
+      formData.append(
+        "username",
+        cleanUsername
+      );
+
+      formData.append(
+        "role",
+        editForm.role.trim()
+      );
+
+      formData.append(
+        "bio",
+        editForm.bio.trim()
+      );
+
+      formData.append(
+        "website",
+        editForm.website.trim()
+      );
+
+      formData.append(
+        "github",
+        editForm.github.trim()
+      );
+
+      formData.append(
+        "linkedin",
+        editForm.linkedin.trim()
+      );
+
+      if (editForm.image) {
+        formData.append(
+          "image",
+          editForm.image
+        );
+      }
+
+      const response = await fetch(
+        `${API_URL}/api/profiles`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      let data = {};
+
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
+      }
+
+      if (!response.ok) {
+        console.error(
+          "Update profile error:",
+          data
+        );
+
+        alert(
+          data.message ||
+            "Failed to update profile."
+        );
+
+        return;
+      }
+
+      console.log(
+        "Profile updated:",
+        data.profile
+      );
+
+      if (data.profile) {
+        setProfile(data.profile);
+
+        localStorage.setItem(
+          "smartshareProfile",
+          JSON.stringify(data.profile)
+        );
+      }
+
+      setEditing(false);
+
+      // If username changed
+      if (
+        data.profile &&
+        data.profile.username !== username
+      ) {
+        navigate(
+          `/profile/${data.profile.username}`,
+          {
+            replace: true,
+          }
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Update profile error:",
+        error
+      );
+
+      alert(
+        "Unable to connect to SmartShare server."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // ==========================================
   // LOADING
@@ -102,23 +346,13 @@ function Profile() {
   if (loading) {
     return (
       <main className="public-profile-page">
-
         <div className="public-profile-card">
-
           <div className="public-profile-content">
+            <h2>Loading profile...</h2>
 
-            <h2>
-              Loading profile...
-            </h2>
-
-            <p>
-              Please wait.
-            </p>
-
+            <p>Please wait.</p>
           </div>
-
         </div>
-
       </main>
     );
   }
@@ -130,30 +364,22 @@ function Profile() {
   if (error || !profile) {
     return (
       <main className="public-profile-page">
-
         <div className="public-profile-card">
-
           <div className="public-profile-content">
-
-            <h2>
-              Profile Not Found
-            </h2>
+            <h2>Profile Not Found</h2>
 
             <p>
               {error ||
                 "This SmartShare profile does not exist."}
             </p>
-
           </div>
-
         </div>
-
       </main>
     );
   }
 
   // ==========================================
-  // PRODUCTION PROFILE URL
+  // PROFILE URL
   // ==========================================
 
   const profileUrl =
@@ -174,12 +400,23 @@ function Profile() {
   };
 
   // ==========================================
+  // SOCIAL URL
+  // ==========================================
+
+  const getSocialUrl = (url) => {
+    if (!url) return "";
+
+    return url.startsWith("http")
+      ? url
+      : `https://${url}`;
+  };
+
+  // ==========================================
   // COPY PROFILE LINK
   // ==========================================
 
   const handleCopy = async () => {
     try {
-
       await navigator.clipboard.writeText(
         profileUrl
       );
@@ -189,14 +426,11 @@ function Profile() {
       setTimeout(() => {
         setCopied(false);
       }, 2000);
-
     } catch (error) {
-
       console.error(
-        "Failed to copy link:",
+        "Failed to copy:",
         error
       );
-
     }
   };
 
@@ -205,11 +439,8 @@ function Profile() {
   // ==========================================
 
   const handleShare = async () => {
-
     if (navigator.share) {
-
       try {
-
         await navigator.share({
           title:
             `${profile.name} | SmartShare`,
@@ -219,19 +450,13 @@ function Profile() {
 
           url: profileUrl,
         });
-
-      } catch (error) {
-
+      } catch {
         console.log(
           "Share cancelled"
         );
-
       }
-
     } else {
-
       handleCopy();
-
     }
   };
 
@@ -240,7 +465,6 @@ function Profile() {
   // ==========================================
 
   const handleDownloadQR = () => {
-
     const svg =
       document.getElementById(
         "smartshare-qr"
@@ -253,23 +477,18 @@ function Profile() {
         .serializeToString(svg);
 
     const canvas =
-      document.createElement(
-        "canvas"
-      );
+      document.createElement("canvas");
 
     const ctx =
       canvas.getContext("2d");
 
-    const img =
-      new Image();
+    const img = new Image();
 
     img.onload = () => {
-
       canvas.width = 600;
       canvas.height = 600;
 
-      ctx.fillStyle =
-        "#ffffff";
+      ctx.fillStyle = "#ffffff";
 
       ctx.fillRect(
         0,
@@ -287,32 +506,24 @@ function Profile() {
       );
 
       const pngUrl =
-        canvas.toDataURL(
-          "image/png"
-        );
+        canvas.toDataURL("image/png");
 
       const downloadLink =
-        document.createElement(
-          "a"
-        );
+        document.createElement("a");
 
-      downloadLink.href =
-        pngUrl;
+      downloadLink.href = pngUrl;
 
       downloadLink.download =
         `${profile.username}-smartshare-qr.png`;
 
       downloadLink.click();
-
     };
 
     img.src =
       "data:image/svg+xml;base64," +
       btoa(
         unescape(
-          encodeURIComponent(
-            svgData
-          )
+          encodeURIComponent(svgData)
         )
       );
   };
@@ -322,7 +533,6 @@ function Profile() {
   // ==========================================
 
   const handleShareQR = async () => {
-
     const svg =
       document.getElementById(
         "smartshare-qr"
@@ -334,24 +544,20 @@ function Profile() {
       new XMLSerializer()
         .serializeToString(svg);
 
-    const blob =
-      new Blob(
-        [svgData],
-        {
-          type:
-            "image/svg+xml",
-        }
-      );
+    const blob = new Blob(
+      [svgData],
+      {
+        type: "image/svg+xml",
+      }
+    );
 
-    const file =
-      new File(
-        [blob],
-        `${profile.username}-smartshare-qr.svg`,
-        {
-          type:
-            "image/svg+xml",
-        }
-      );
+    const file = new File(
+      [blob],
+      `${profile.username}-smartshare-qr.svg`,
+      {
+        type: "image/svg+xml",
+      }
+    );
 
     if (
       navigator.share &&
@@ -360,11 +566,8 @@ function Profile() {
         files: [file],
       })
     ) {
-
       try {
-
         await navigator.share({
-
           title:
             `${profile.name} | SmartShare`,
 
@@ -372,39 +575,276 @@ function Profile() {
             "Scan my SmartShare profile QR",
 
           files: [file],
-
         });
-
-      } catch (error) {
-
+      } catch {
         console.log(
           "QR share cancelled"
         );
-
       }
-
     } else {
-
       handleDownloadQR();
-
     }
   };
 
   // ==========================================
-  // SOCIAL URL
+  // EDIT MODE
   // ==========================================
 
-  const getSocialUrl = (url) => {
+  if (editing) {
+    return (
+      <main className="edit-profile-page">
 
-    if (!url) return "";
+        <div className="edit-profile-card">
 
-    return url.startsWith("http")
-      ? url
-      : `https://${url}`;
-  };
+          <div className="edit-profile-header">
+
+            <div>
+              <span className="edit-badge">
+                SMARTSHARE
+              </span>
+
+              <h1>
+                Edit Profile
+              </h1>
+
+              <p>
+                Update your SmartShare information.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className="edit-close-button"
+              onClick={handleCancelEdit}
+            >
+              <X size={20} />
+            </button>
+
+          </div>
+
+          <div className="edit-profile-form">
+
+            {/* PHOTO */}
+
+            <div className="edit-photo-section">
+
+              <div className="edit-avatar">
+
+                {editForm.image ? (
+                  <img
+                    src={URL.createObjectURL(
+                      editForm.image
+                    )}
+                    alt="Preview"
+                  />
+                ) : profile.image ? (
+                  <img
+                    src={profile.image}
+                    alt={profile.name}
+                  />
+                ) : (
+                  getInitials(
+                    editForm.name
+                  )
+                )}
+
+              </div>
+
+              <label
+                htmlFor="edit-profile-image"
+                className="edit-photo-button"
+              >
+                <Upload size={17} />
+
+                Change Photo
+              </label>
+
+              <input
+                id="edit-profile-image"
+                type="file"
+                accept="image/*"
+                onChange={handleEditImage}
+                style={{
+                  display: "none",
+                }}
+              />
+
+            </div>
+
+            {/* NAME */}
+
+            <div className="edit-form-group">
+
+              <label>Full Name</label>
+
+              <input
+                name="name"
+                value={editForm.name}
+                onChange={handleEditChange}
+                placeholder="Your name"
+              />
+
+            </div>
+
+            {/* USERNAME */}
+
+            <div className="edit-form-group">
+
+              <label>Username</label>
+
+              <div className="edit-username-input">
+
+                <span>smartshare/</span>
+
+                <input
+                  name="username"
+                  value={editForm.username}
+                  onChange={handleEditChange}
+                  placeholder="username"
+                />
+
+              </div>
+
+            </div>
+
+            {/* ROLE */}
+
+            <div className="edit-form-group">
+
+              <label>Profession</label>
+
+              <input
+                name="role"
+                value={editForm.role}
+                onChange={handleEditChange}
+                placeholder="Frontend Developer"
+              />
+
+            </div>
+
+            {/* BIO */}
+
+            <div className="edit-form-group">
+
+              <label>Bio</label>
+
+              <textarea
+                name="bio"
+                value={editForm.bio}
+                onChange={handleEditChange}
+                rows="4"
+                placeholder="Tell people about yourself..."
+              />
+
+            </div>
+
+            {/* WEBSITE */}
+
+            <div className="edit-form-group">
+
+              <label>Website</label>
+
+              <div className="edit-input-icon">
+
+                <Globe size={17} />
+
+                <input
+                  name="website"
+                  value={editForm.website}
+                  onChange={handleEditChange}
+                  placeholder="https://yourwebsite.com"
+                />
+
+              </div>
+
+            </div>
+
+            {/* GITHUB */}
+
+            <div className="edit-form-group">
+
+              <label>GitHub</label>
+
+              <div className="edit-input-icon">
+
+                <Link2 size={17} />
+
+                <input
+                  name="github"
+                  value={editForm.github}
+                  onChange={handleEditChange}
+                  placeholder="GitHub profile URL"
+                />
+
+              </div>
+
+            </div>
+
+            {/* LINKEDIN */}
+
+            <div className="edit-form-group">
+
+              <label>LinkedIn</label>
+
+              <div className="edit-input-icon">
+
+                <Link2 size={17} />
+
+                <input
+                  name="linkedin"
+                  value={editForm.linkedin}
+                  onChange={handleEditChange}
+                  placeholder="LinkedIn profile URL"
+                />
+
+              </div>
+
+            </div>
+
+            {/* ACTIONS */}
+
+            <div className="edit-profile-actions">
+
+              <button
+                type="button"
+                className="edit-cancel-button"
+                onClick={handleCancelEdit}
+                disabled={saving}
+              >
+                <X size={17} />
+
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="edit-save-button"
+                onClick={handleSaveProfile}
+                disabled={saving}
+              >
+                {saving ? (
+                  "Saving..."
+                ) : (
+                  <>
+                    <Save size={17} />
+
+                    Save Changes
+                  </>
+                )}
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </main>
+    );
+  }
 
   // ==========================================
-  // UI
+  // PUBLIC PROFILE UI
   // ==========================================
 
   return (
@@ -418,23 +858,29 @@ function Profile() {
 
         <div className="public-profile-content">
 
+          {/* EDIT BUTTON */}
+
+          <button
+            type="button"
+            className="profile-edit-button"
+            onClick={handleStartEdit}
+          >
+            <Edit3 size={17} />
+
+            Edit Profile
+          </button>
+
           {/* AVATAR */}
 
           <div className="public-avatar">
 
-            {profile.imageUrl ? (
-
+            {profile.image ? (
               <img
-                src={profile.imageUrl}
+                src={profile.image}
                 alt={profile.name}
               />
-
             ) : (
-
-              getInitials(
-                profile.name
-              )
-
+              getInitials(profile.name)
             )}
 
           </div>
@@ -468,7 +914,6 @@ function Profile() {
           <div className="public-links">
 
             {profile.website && (
-
               <a
                 href={getSocialUrl(
                   profile.website
@@ -476,17 +921,13 @@ function Profile() {
                 target="_blank"
                 rel="noreferrer"
               >
-
                 <Globe size={17} />
 
                 Website
-
               </a>
-
             )}
 
             {profile.github && (
-
               <a
                 href={getSocialUrl(
                   profile.github
@@ -494,17 +935,13 @@ function Profile() {
                 target="_blank"
                 rel="noreferrer"
               >
-
                 <Link2 size={17} />
 
                 GitHub
-
               </a>
-
             )}
 
             {profile.linkedin && (
-
               <a
                 href={getSocialUrl(
                   profile.linkedin
@@ -512,18 +949,15 @@ function Profile() {
                 target="_blank"
                 rel="noreferrer"
               >
-
                 <Link2 size={17} />
 
                 LinkedIn
-
               </a>
-
             )}
 
           </div>
 
-          {/* SHARE ACTIONS */}
+          {/* SHARE */}
 
           <div className="profile-share-actions">
 
@@ -532,11 +966,9 @@ function Profile() {
               className="share-profile-button"
               onClick={handleShare}
             >
-
               <Share2 size={17} />
 
               Share Profile
-
             </button>
 
             <button
@@ -544,34 +976,24 @@ function Profile() {
               className="copy-profile-button"
               onClick={handleCopy}
             >
-
               {copied ? (
-
                 <>
-
                   <Check size={17} />
 
                   Copied!
-
                 </>
-
               ) : (
-
                 <>
-
                   <Copy size={17} />
 
                   Copy Link
-
                 </>
-
               )}
-
             </button>
 
           </div>
 
-          {/* QR CODE */}
+          {/* QR */}
 
           <div className="profile-qr-section">
 
@@ -593,41 +1015,31 @@ function Profile() {
             </div>
 
             <p>
-
               Scan this QR code to open
               <br />
               this SmartShare profile.
-
             </p>
 
             <div className="qr-actions">
 
               <button
                 type="button"
-                onClick={
-                  handleDownloadQR
-                }
+                onClick={handleDownloadQR}
                 className="qr-download-button"
               >
-
                 <Download size={16} />
 
                 Download QR
-
               </button>
 
               <button
                 type="button"
-                onClick={
-                  handleShareQR
-                }
+                onClick={handleShareQR}
                 className="qr-share-button"
               >
-
                 <Share2 size={16} />
 
                 Share QR
-
               </button>
 
             </div>

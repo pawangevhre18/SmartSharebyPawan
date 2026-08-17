@@ -9,6 +9,8 @@ import CreateProfile from "./Pages/CreateProfile";
 import Login from "./Pages/Login";
 import Signup from "./Pages/Signup";
 import Profile from "./Pages/Profile";
+import ProtectedRoute from "./ProtectedRoute";
+import EditProfile from "./Pages/EditProfile";
 
 function App() {
   return (
@@ -16,14 +18,26 @@ function App() {
       <Navbar />
 
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/features" element={<Features />} />
-        <Route path="/templates" element={<Templates />} />
-        <Route path="/pricing" element={<Pricing />} />
+        {/* PUBLIC ROUTES */}
 
         <Route
-          path="/create-profile"
-          element={<CreateProfile />}
+          path="/"
+          element={<Home />}
+        />
+
+        <Route
+          path="/features"
+          element={<Features />}
+        />
+
+        <Route
+          path="/templates"
+          element={<Templates />}
+        />
+
+        <Route
+          path="/pricing"
+          element={<Pricing />}
         />
 
         <Route
@@ -36,10 +50,27 @@ function App() {
           element={<Signup />}
         />
 
+        {/* PUBLIC PROFILE */}
+        {/* QR code se koi bhi profile open kar sakta hai */}
+
         <Route
           path="/profile/:username"
           element={<Profile />}
         />
+          <Route
+  path="/edit-profile"
+  element={<EditProfile />}
+/>
+
+        {/* PROTECTED ROUTES */}
+
+        <Route element={<ProtectedRoute />}>
+          <Route
+            path="/create-profile"
+            element={<CreateProfile />}
+          />
+        
+        </Route>
       </Routes>
     </BrowserRouter>
   );
