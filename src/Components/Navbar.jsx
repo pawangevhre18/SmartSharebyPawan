@@ -25,13 +25,23 @@ function Navbar() {
 
         {/* Buttons */}
         <div className="nav-buttons">
-          <Link to="/login" className="login-btn">
+
+          {/* Login */}
+          <Link
+            to="/login"
+            className="login-btn"
+          >
             Log in
           </Link>
 
-          <Link to="/create-profile" className="nav-cta">
+          {/* Signup */}
+          <Link
+            to="/signup"
+            className="nav-cta"
+          >
             Get Started
           </Link>
+
         </div>
 
       </div>

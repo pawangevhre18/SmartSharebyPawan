@@ -7,12 +7,12 @@ import Templates from "./Pages/Templates";
 import Pricing from "./Pages/Pricing";
 import CreateProfile from "./Pages/CreateProfile";
 import Login from "./Pages/Login";
+import Signup from "./Pages/Signup";
 import Profile from "./Pages/Profile";
 
 function App() {
   return (
     <BrowserRouter>
-
       <Navbar />
 
       <Routes>
@@ -20,11 +20,27 @@ function App() {
         <Route path="/features" element={<Features />} />
         <Route path="/templates" element={<Templates />} />
         <Route path="/pricing" element={<Pricing />} />
-        <Route path="/create-profile" element={<CreateProfile />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/profile/:username" element={<Profile />} />
-      </Routes>
 
+        <Route
+          path="/create-profile"
+          element={<CreateProfile />}
+        />
+
+        <Route
+          path="/login"
+          element={<Login />}
+        />
+
+        <Route
+          path="/signup"
+          element={<Signup />}
+        />
+
+        <Route
+          path="/profile/:username"
+          element={<Profile />}
+        />
+      </Routes>
     </BrowserRouter>
   );
 }

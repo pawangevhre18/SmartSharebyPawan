@@ -4,6 +4,8 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 dotenv.config();
 
