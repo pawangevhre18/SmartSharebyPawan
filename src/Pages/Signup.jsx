@@ -4,7 +4,7 @@ import { ArrowRight, Link2 } from "lucide-react";
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
-  "http://localhost:5000";
+  "https://smartsharebypawan.onrender.com";
 
 function Signup() {
   const navigate = useNavigate();
