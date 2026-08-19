@@ -86,6 +86,14 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+
     password: {
       type: String,
       required: true,
@@ -107,12 +115,15 @@ const profileSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
+      trim: true,
     },
 
     username: {
       type: String,
       required: true,
       unique: true,
+      lowercase: true,
+      trim: true,
     },
 
     role: {
@@ -150,18 +161,25 @@ const profileSchema = new mongoose.Schema(
   }
 );
 
-const Profile = mongoose.model(
-  "Profile",
-  profileSchema
-);
+const Profile = mongoose.model("Profile", profileSchema);
 
 // ==========================================
 // TEST ROUTE
 // ==========================================
 
 app.get("/", (req, res) => {
-  res.json({
+  res.status(200).json({
     message: "SmartShare Backend is Running 🚀",
+  });
+});
+
+// ==========================================
+// AUTH TEST ROUTE
+// ==========================================
+
+app.get("/api/auth-test", (req, res) => {
+  res.status(200).json({
+    message: "AUTH ROUTES SERVER IS LIVE ✅",
   });
 });
 
@@ -171,13 +189,23 @@ app.get("/", (req, res) => {
 
 app.post("/api/auth/signup", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    console.log("Signup request received");
 
-    // Validation
-    if (!name || !email || !password) {
+    const {
+      name,
+      email,
+      username,
+      password,
+    } = req.body;
+
+    // ========================================
+    // VALIDATION
+    // ========================================
+
+    if (!name || !email || !username || !password) {
       return res.status(400).json({
         message:
-          "Name, email and password are required.",
+          "Name, email, username and password are required.",
       });
     }
 
@@ -188,38 +216,81 @@ app.post("/api/auth/signup", async (req, res) => {
       });
     }
 
+    const cleanName = name.trim();
+
     const cleanEmail = email
       .trim()
       .toLowerCase();
 
-    // Check existing user
-    const existingUser = await User.findOne({
+    const cleanUsername = username
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-_]/g, "");
+
+    if (!cleanUsername) {
+      return res.status(400).json({
+        message: "Please enter a valid username.",
+      });
+    }
+
+    // ========================================
+    // CHECK EXISTING EMAIL
+    // ========================================
+
+    const existingEmail = await User.findOne({
       email: cleanEmail,
     });
 
-    if (existingUser) {
+    if (existingEmail) {
       return res.status(409).json({
         message:
           "An account with this email already exists.",
       });
     }
 
-    // Hash password
+    // ========================================
+    // CHECK EXISTING USERNAME
+    // ========================================
+
+    const existingUsername = await User.findOne({
+      username: cleanUsername,
+    });
+
+    if (existingUsername) {
+      return res.status(409).json({
+        message:
+          "This username is already taken.",
+      });
+    }
+
+    // ========================================
+    // HASH PASSWORD
+    // ========================================
+
     const hashedPassword =
       await bcrypt.hash(password, 10);
 
-    // Create user
+    // ========================================
+    // CREATE USER
+    // ========================================
+
     const user = await User.create({
-      name: name.trim(),
+      name: cleanName,
       email: cleanEmail,
+      username: cleanUsername,
       password: hashedPassword,
     });
 
-    // JWT
+    // ========================================
+    // CREATE JWT
+    // ========================================
+
     const token = jwt.sign(
       {
         userId: user._id.toString(),
         email: user.email,
+        username: user.username,
       },
       JWT_SECRET,
       {
@@ -232,13 +303,20 @@ app.post("/api/auth/signup", async (req, res) => {
       user.email
     );
 
-    res.status(201).json({
+    // ========================================
+    // RESPONSE
+    // ========================================
+
+    return res.status(201).json({
       message: "Signup successful.",
+
       token,
+
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
+        username: user.username,
       },
     });
   } catch (error) {
@@ -247,7 +325,7 @@ app.post("/api/auth/signup", async (req, res) => {
       error.message
     );
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Signup failed.",
       error: error.message,
     });
@@ -260,7 +338,14 @@ app.post("/api/auth/signup", async (req, res) => {
 
 app.post("/api/auth/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const {
+      email,
+      password,
+    } = req.body;
+
+    // ========================================
+    // VALIDATION
+    // ========================================
 
     if (!email || !password) {
       return res.status(400).json({
@@ -273,7 +358,10 @@ app.post("/api/auth/login", async (req, res) => {
       .trim()
       .toLowerCase();
 
-    // Find user
+    // ========================================
+    // FIND USER
+    // ========================================
+
     const user = await User.findOne({
       email: cleanEmail,
     });
@@ -285,7 +373,10 @@ app.post("/api/auth/login", async (req, res) => {
       });
     }
 
-    // Check password
+    // ========================================
+    // CHECK PASSWORD
+    // ========================================
+
     const passwordMatch =
       await bcrypt.compare(
         password,
@@ -299,11 +390,15 @@ app.post("/api/auth/login", async (req, res) => {
       });
     }
 
+    // ========================================
     // JWT
+    // ========================================
+
     const token = jwt.sign(
       {
         userId: user._id.toString(),
         email: user.email,
+        username: user.username,
       },
       JWT_SECRET,
       {
@@ -316,13 +411,20 @@ app.post("/api/auth/login", async (req, res) => {
       user.email
     );
 
-    res.status(200).json({
+    // ========================================
+    // RESPONSE
+    // ========================================
+
+    return res.status(200).json({
       message: "Login successful.",
+
       token,
+
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
+        username: user.username,
       },
     });
   } catch (error) {
@@ -331,7 +433,7 @@ app.post("/api/auth/login", async (req, res) => {
       error.message
     );
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Login failed.",
       error: error.message,
     });
@@ -359,7 +461,7 @@ app.post(
       let imageUrl = "";
 
       // ========================================
-      // UPLOAD IMAGE TO CLOUDINARY
+      // CLOUDINARY IMAGE UPLOAD
       // ========================================
 
       if (req.file) {
@@ -390,8 +492,7 @@ app.post(
           uploadResult.secure_url;
 
         console.log(
-          "Image uploaded:",
-          imageUrl
+          "Image uploaded successfully"
         );
       }
 
@@ -421,8 +522,10 @@ app.post(
           profile.linkedin || "",
       };
 
-      // Only replace image when
-      // new image exists
+      // ========================================
+      // ONLY UPDATE IMAGE IF NEW IMAGE EXISTS
+      // ========================================
+
       if (imageUrl) {
         profileData.image = imageUrl;
       }
@@ -439,11 +542,8 @@ app.post(
           },
           profileData,
           {
-            // FIXED MONGOOSE WARNING
             returnDocument: "after",
-
             upsert: true,
-
             runValidators: true,
           }
         );
@@ -457,7 +557,7 @@ app.post(
       // RESPONSE
       // ========================================
 
-      res.status(200).json({
+      return res.status(200).json({
         message:
           "Profile saved successfully.",
 
@@ -469,12 +569,11 @@ app.post(
         error.message
       );
 
-      res.status(500).json({
+      return res.status(500).json({
         message:
           "Failed to save profile.",
 
-        error:
-          error.message,
+        error: error.message,
       });
     }
   }
@@ -505,14 +604,14 @@ app.get(
         });
       }
 
-      res.json(profile);
+      return res.status(200).json(profile);
     } catch (error) {
       console.error(
         "Get profile error:",
         error.message
       );
 
-      res.status(500).json({
+      return res.status(500).json({
         message:
           "Failed to get profile.",
 
@@ -522,6 +621,22 @@ app.get(
     }
   }
 );
+
+// ==========================================
+// 404 HANDLER
+// ==========================================
+
+app.use((req, res) => {
+  console.log(
+    `404 - Route not found: ${req.method} ${req.originalUrl}`
+  );
+
+  res.status(404).json({
+    message: "Route not found.",
+    method: req.method,
+    path: req.originalUrl,
+  });
+});
 
 // ==========================================
 // START SERVER
